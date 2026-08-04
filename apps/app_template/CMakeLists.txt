@@ -12,4 +12,19 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../shared ${CMAKE_CURRENT_BINARY
 target_sources(app PRIVATE src/main.c)
 
 # Link the shared driver and utility libraries to the main application target
-target_link_libraries(app PRIVATE shared_imu shared_utils shared_hal)
+target_link_libraries(app PRIVATE
+    shared_imu
+    shared_utils
+    shared_hal
+    shared_uart
+    shared_spi
+    shared_i2c
+    shared_i2s
+    shared_ble
+    shared_usb_cdc
+    shared_nfc
+    shared_rgb_led
+    shared_battery
+    shared_button
+    shared_microphone
+)

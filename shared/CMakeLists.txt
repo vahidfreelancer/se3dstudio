@@ -42,5 +42,61 @@ target_include_directories(shared_hal PUBLIC
 )
 
 target_link_libraries(shared_hal PUBLIC zephyr_interface)
-add_dependencies(shared_hal zephyr_generated_headers)
+
+# Define communication libraries
+add_library(shared_uart STATIC drivers/uart/uart_driver.c)
+target_include_directories(shared_uart PUBLIC drivers/uart)
+target_link_libraries(shared_uart PUBLIC zephyr_interface)
+add_dependencies(shared_uart zephyr_generated_headers)
+
+add_library(shared_spi STATIC drivers/spi/spi_driver.c)
+target_include_directories(shared_spi PUBLIC drivers/spi)
+target_link_libraries(shared_spi PUBLIC zephyr_interface)
+add_dependencies(shared_spi zephyr_generated_headers)
+
+add_library(shared_i2c STATIC drivers/i2c/i2c_driver.c)
+target_include_directories(shared_i2c PUBLIC drivers/i2c)
+target_link_libraries(shared_i2c PUBLIC zephyr_interface)
+add_dependencies(shared_i2c zephyr_generated_headers)
+
+add_library(shared_i2s STATIC drivers/i2s/i2s_driver.c)
+target_include_directories(shared_i2s PUBLIC drivers/i2s)
+target_link_libraries(shared_i2s PUBLIC zephyr_interface)
+add_dependencies(shared_i2s zephyr_generated_headers)
+
+add_library(shared_ble STATIC drivers/ble/ble_driver.c)
+target_include_directories(shared_ble PUBLIC drivers/ble)
+target_link_libraries(shared_ble PUBLIC zephyr_interface)
+add_dependencies(shared_ble zephyr_generated_headers)
+
+add_library(shared_usb_cdc STATIC drivers/usb_cdc/usb_cdc_driver.c)
+target_include_directories(shared_usb_cdc PUBLIC drivers/usb_cdc)
+target_link_libraries(shared_usb_cdc PUBLIC zephyr_interface)
+add_dependencies(shared_usb_cdc zephyr_generated_headers)
+
+add_library(shared_nfc STATIC drivers/nfc/nfc_driver.c)
+target_include_directories(shared_nfc PUBLIC drivers/nfc)
+target_link_libraries(shared_nfc PUBLIC zephyr_interface)
+add_dependencies(shared_nfc zephyr_generated_headers)
+
+# Define board-specific libraries
+add_library(shared_rgb_led STATIC drivers/rgb_led/rgb_led_driver.c)
+target_include_directories(shared_rgb_led PUBLIC drivers/rgb_led)
+target_link_libraries(shared_rgb_led PUBLIC zephyr_interface)
+add_dependencies(shared_rgb_led zephyr_generated_headers)
+
+add_library(shared_battery STATIC drivers/battery/battery_driver.c)
+target_include_directories(shared_battery PUBLIC drivers/battery)
+target_link_libraries(shared_battery PUBLIC zephyr_interface)
+add_dependencies(shared_battery zephyr_generated_headers)
+
+add_library(shared_button STATIC drivers/button/button_driver.c)
+target_include_directories(shared_button PUBLIC drivers/button)
+target_link_libraries(shared_button PUBLIC zephyr_interface)
+add_dependencies(shared_button zephyr_generated_headers)
+
+add_library(shared_microphone STATIC drivers/microphone/mic_driver.c)
+target_include_directories(shared_microphone PUBLIC drivers/microphone)
+target_link_libraries(shared_microphone PUBLIC zephyr_interface)
+add_dependencies(shared_microphone zephyr_generated_headers)
 

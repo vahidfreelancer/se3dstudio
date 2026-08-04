@@ -47,3 +47,8 @@
 		pwm-blue = &pwm_blue;
 	};
 };
+
+&pdm0 {
+	status = "okay";
+};
+

@@ -2,186 +2,134 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <stdio.h>
 #include <string.h>
 
-/* Include shared libraries */
-#include "imu_driver.h"
-#include "utils.h"
-
-/* Include new core HAL libraries */
-#include "hal_gpio.h"
-#include "hal_adc.h"
+/* Include core HAL libraries */
 #include "hal_pwm.h"
-#include "hal_timer.h"
-#include "hal_rtc.h"
-#include "hal_watchdog.h"
-#include "hal_flash.h"
-#include "hal_rng.h"
 #include "hal_system.h"
-#include "hal_power.h"
 
-#if defined(CONFIG_ADC_NRFX_SAADC)
-#include <hal/nrf_saadc.h>
-#endif
+/* Include BLE Driver */
+#include "ble_driver.h"
 
 /* Register application log module */
-LOG_MODULE_REGISTER(app_template, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(app_pwm_led, LOG_LEVEL_INF);
 
-/* Get the LED0 devicetree node alias (typically Red LED on Seeed Studio XIAO boards) */
-#define LED0_NODE DT_ALIAS(led0)
+/* Get PWM specifications from Devicetree aliases */
+static const struct pwm_dt_spec pwm_r = PWM_DT_SPEC_GET(DT_ALIAS(pwm_red));
+static const struct pwm_dt_spec pwm_g = PWM_DT_SPEC_GET(DT_ALIAS(pwm_green));
+static const struct pwm_dt_spec pwm_b = PWM_DT_SPEC_GET(DT_ALIAS(pwm_blue));
 
-#if DT_NODE_EXISTS(LED0_NODE)
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-#endif
+/* Structure for representing RGB values */
+struct color_rgb {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    const char *name;
+};
 
-/* Define a kernel timer for our timer HAL test */
-static struct k_timer test_timer;
-static void test_timer_expiry_fn(struct k_timer *timer_id)
+/* 12 Major Color Wheel Colors */
+static const struct color_rgb colors_12[12] = {
+    {255, 0, 0, "Red"},
+    {255, 127, 0, "Orange"},
+    {255, 255, 0, "Yellow"},
+    {127, 255, 0, "Chartreuse"},
+    {0, 255, 0, "Green"},
+    {0, 255, 127, "Spring Green"},
+    {0, 255, 255, "Cyan"},
+    {0, 127, 255, "Azure"},
+    {0, 0, 255, "Blue"},
+    {127, 0, 255, "Violet"},
+    {255, 0, 255, "Magenta"},
+    {255, 0, 127, "Rose"}
+};
+
+/**
+ * @brief Sets the RGB LED color by translating 0-255 brightness to PWM pulse widths.
+ */
+static int set_led_color(const struct color_rgb *color)
 {
-    LOG_INF("HAL Timer callback fired! (Every 5 seconds)");
+    int ret;
+    
+    // Scale 0-255 values to nanoseconds based on period
+    uint32_t r_pulse = (color->r * pwm_r.period) / 255;
+    uint32_t g_pulse = (color->g * pwm_g.period) / 255;
+    uint32_t b_pulse = (color->b * pwm_b.period) / 255;
+
+    ret = hal_pwm_set_period_and_duty(&pwm_r, pwm_r.period, r_pulse);
+    if (ret < 0) return ret;
+
+    ret = hal_pwm_set_period_and_duty(&pwm_g, pwm_g.period, g_pulse);
+    if (ret < 0) return ret;
+
+    ret = hal_pwm_set_period_and_duty(&pwm_b, pwm_b.period, b_pulse);
+    if (ret < 0) return ret;
+
+    return 0;
 }
 
 int main(void)
 {
     int ret;
+    char ble_name[32];
+    uint8_t uuid[8];
 
-    LOG_INF("Starting Application Template on Seeed Studio XIAO nRF52840 Sense Plus...");
+    LOG_INF("Starting 12-Color PWM RGB LED Cycle & Custom BLE Name Application...");
 
     /* Log System Hardware Details */
     hal_system_log_info();
 
-    /* Initialize user LED if configured in the devicetree using HAL GPIO */
-#if DT_NODE_EXISTS(LED0_NODE)
-    ret = hal_gpio_configure(&led, GPIO_OUTPUT_ACTIVE);
+    /* Check if PWM devices are ready */
+    if (!device_is_ready(pwm_r.dev) || !device_is_ready(pwm_g.dev) || !device_is_ready(pwm_b.dev)) {
+        LOG_ERR("PWM devices for RGB LED are not ready");
+        return -ENODEV;
+    }
+
+    /* Initialize BLE Stack */
+    ret = ble_drv_init();
     if (ret < 0) {
-        LOG_ERR("Failed to configure LED pin via HAL GPIO (err %d)", ret);
-    } else {
-        LOG_INF("LED configured successfully via HAL GPIO");
+        LOG_ERR("Failed to initialize BLE (err %d)", ret);
+        return ret;
     }
-#endif
 
-    /* Initialize shared IMU driver wrapper */
-    ret = imu_driver_init();
+    /* Retrieve Device Unique ID to generate a 4-digit hexadecimal suffix */
+    int len = hal_system_get_uuid(uuid, sizeof(uuid));
+    if (len == 8) {
+        // Use the lower 16 bits of the 64-bit unique ID
+        uint16_t dev_id = ((uint16_t)uuid[1] << 8) | uuid[0];
+        snprintf(ble_name, sizeof(ble_name), "se3dstudio_%04X", dev_id);
+    } else {
+        snprintf(ble_name, sizeof(ble_name), "se3dstudio_0000");
+    }
+
+    /* Start advertising with dynamic device name */
+    ret = ble_drv_adv_start(ble_name);
     if (ret < 0) {
-        LOG_WRN("Failed to initialize IMU driver (err %d). Running in degraded mode.", ret);
-    } else {
-        LOG_INF("IMU driver initialized successfully");
+        LOG_ERR("Failed to start BLE advertising (err %d)", ret);
+        return ret;
     }
 
-    /* Initialize and start Watchdog */
-    const struct device *const wdt_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(wdt0));
-    int wdt_channel = -1;
-    if (wdt_dev != NULL && device_is_ready(wdt_dev)) {
-        ret = hal_wdt_init(wdt_dev);
-        if (ret == 0) {
-            wdt_channel = hal_wdt_install_timeout(wdt_dev, 5000); // 5-second timeout
-            if (wdt_channel >= 0) {
-                ret = hal_wdt_start(wdt_dev);
-                if (ret == 0) {
-                    LOG_INF("Watchdog started successfully with 5000ms timeout");
-                }
-            }
-        }
-    } else {
-        LOG_WRN("Watchdog device not ready or disabled");
-    }
+    LOG_INF("BLE advertising started as '%s'. Initiating color cycle...", ble_name);
 
-    /* Initialize HAL Timer (k_timer wrapper) */
-    hal_timer_init(&test_timer, test_timer_expiry_fn, NULL);
-    hal_timer_start(&test_timer, 5000, 5000); // Start 5s periodic timer
-
-    /* Initialize RTC using rtc1 counter */
-    const struct device *const rtc_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(rtc1));
-    bool rtc_available = false;
-    if (rtc_dev != NULL && device_is_ready(rtc_dev)) {
-        ret = hal_rtc_init(rtc_dev);
-        if (ret == 0) {
-            rtc_available = true;
-            // Set RTC time to 17171717 seconds (arbitrary time)
-            hal_rtc_set_time(rtc_dev, 17171717);
-            LOG_INF("RTC initialized and time set to 17171717 seconds");
-        }
-    } else {
-        LOG_WRN("RTC counter device not ready or disabled");
-    }
-
-    /* Initialize ADC */
-    const struct device *const adc_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(adc));
-    bool adc_available = false;
-    if (adc_dev != NULL && device_is_ready(adc_dev)) {
-        ret = hal_adc_init(adc_dev);
-        if (ret == 0) {
-            adc_available = true;
-            LOG_INF("ADC driver initialized successfully");
-        }
-    } else {
-        LOG_WRN("ADC device not ready or disabled");
-    }
-
-    struct imu_data imu_readings;
-
+    int color_idx = 0;
     while (1) {
-        /* Toggle user LED using HAL GPIO */
-#if DT_NODE_EXISTS(LED0_NODE)
-        hal_gpio_toggle(&led);
-#endif
-
-        /* Log system status using the shared utility helper */
-        utils_log_system_status();
-
-        /* If IMU driver initialized successfully, fetch and print telemetry data */
-        if (ret == 0) {
-            int fetch_ret = imu_driver_fetch(&imu_readings);
-            if (fetch_ret == 0) {
-                LOG_INF("IMU Accel: X: %.3f, Y: %.3f, Z: %.3f m/s^2",
-                        sensor_value_to_double(&imu_readings.accel[0]),
-                        sensor_value_to_double(&imu_readings.accel[1]),
-                        sensor_value_to_double(&imu_readings.accel[2]));
-            }
+        const struct color_rgb *color = &colors_12[color_idx];
+        
+        ret = set_led_color(color);
+        if (ret < 0) {
+            LOG_ERR("Failed to set color (err %d)", ret);
+        } else {
+            LOG_INF("Switching to Color [%2d/12]: %-15s (R:%3d, G:%3d, B:%3d)",
+                    color_idx + 1, color->name, color->r, color->g, color->b);
         }
 
-        /* Test RNG: Print random 32-bit integer */
-        uint32_t rand_val = hal_rng_get_u32();
-        LOG_INF("HAL RNG Value: 0x%08X", rand_val);
+        // Notify connected Bluetooth clients of the current color index
+        uint8_t notify_data[1] = { (uint8_t)color_idx };
+        ble_drv_notify(notify_data, sizeof(notify_data));
 
-        /* Test RTC: Get current time */
-        if (rtc_available) {
-            uint32_t rtc_time = 0;
-            if (hal_rtc_get_time(rtc_dev, &rtc_time) == 0) {
-                LOG_INF("HAL RTC Time: %u seconds", rtc_time);
-            }
-        }
-
-        /* Test ADC: Read a channel if available (channel 0) */
-        if (adc_available) {
-            int16_t adc_raw = 0;
-            int32_t adc_mv = 0;
-            // Read channel 0 with 10-bit resolution
-            // Configure the channel first
-            struct adc_channel_cfg ch_cfg = {
-                .gain = ADC_GAIN_1_6,
-                .reference = ADC_REF_INTERNAL, // 0.6V internal ref on nRF52
-                .acquisition_time = ADC_ACQ_TIME_DEFAULT,
-                .channel_id = 0,
-#if defined(CONFIG_ADC_NRFX_SAADC)
-                .input_positive = NRF_SAADC_INPUT_AIN0, // AIN0
-#endif
-            };
-            hal_adc_channel_setup(adc_dev, &ch_cfg);
-            
-            if (hal_adc_read_raw(adc_dev, 0, 10, &adc_raw) == 0) {
-                // nRF52 internal reference is 600mV, with gain 1/6, the full-scale range is 3600mV
-                hal_adc_read_mv(adc_dev, 0, 10, 3600, &adc_mv);
-                LOG_INF("HAL ADC Channel 0 Raw: %d, Voltage: %d mV", adc_raw, adc_mv);
-            }
-        }
-
-        /* Feed Watchdog if active */
-        if (wdt_channel >= 0) {
-            hal_wdt_feed(wdt_dev, wdt_channel);
-        }
-
-        k_msleep(1000);
+        color_idx = (color_idx + 1) % 12;
+        k_msleep(200);
     }
 
     return 0;
