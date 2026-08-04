@@ -1,0 +1,4 @@
+/*
+ * Empty devicetree overlay for application-specific overrides on Seeed Studio XIAO nRF52840 Sense Plus.
+ * Add overrides or custom configurations here.
+ */
