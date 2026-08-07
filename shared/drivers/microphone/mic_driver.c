@@ -9,8 +9,8 @@
 LOG_MODULE_REGISTER(mic_driver, LOG_LEVEL_INF);
 
 #define MIC_PWR_PIN 10
-#define BLOCK_SIZE  512 // 512 bytes = 256 PCM samples (16-bit)
-#define BLOCK_COUNT 4
+#define BLOCK_SIZE  512 // 512 bytes = 256 16-bit PCM samples (matches ADPCM block size)
+#define BLOCK_COUNT 16  // 16 slab buffers to prevent PDM DMA buffer exhaustion
 
 static const struct device *gpio1_dev = NULL;
 static const struct device *pdm_dev = NULL;
@@ -27,7 +27,7 @@ static struct pcm_stream_cfg stream_cfg = {
 static struct dmic_cfg mic_config = {
     .io = {
         .min_pdm_clk_freq = 1000000,
-        .max_pdm_clk_freq = 2000000,
+        .max_pdm_clk_freq = 3250000,
         .min_pdm_clk_dc = 40,
         .max_pdm_clk_dc = 60,
     },
@@ -55,8 +55,8 @@ int mic_drv_init(void)
         return -ENODEV;
     }
 
-    // Configure microphone power enable pin (output, default low / off)
-    ret = gpio_pin_configure(gpio1_dev, MIC_PWR_PIN, GPIO_OUTPUT_LOW);
+    // Configure microphone power enable pin (output, default high / on)
+    ret = gpio_pin_configure(gpio1_dev, MIC_PWR_PIN, GPIO_OUTPUT_ACTIVE);
     if (ret < 0) {
         LOG_ERR("Failed to configure mic power pin (err %d)", ret);
         return ret;
@@ -74,34 +74,37 @@ int mic_drv_start(void)
         return -EINVAL;
     }
 
-    // Enable power to the PDM microphone (GPIO Port 1 Pin 10 HIGH)
+    // Power ON the PDM microphone (GPIO Port 1 Pin 10 HIGH)
     ret = gpio_pin_set(gpio1_dev, MIC_PWR_PIN, 1);
     if (ret < 0) {
         LOG_ERR("Failed to enable microphone power");
         return ret;
     }
 
-    // Wait for the microphone to power up (needs ~10ms startup delay)
-    k_msleep(15);
+    // Wait for the microphone power rail to stabilize
+    k_msleep(20);
 
-    // Build channel map dynamically using helper
-    mic_config.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
+    // On XIAO BLE Sense, PDM mic data line is active on RIGHT channel (or LEFT fallback)
+    mic_config.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_RIGHT);
 
     ret = dmic_configure(pdm_dev, &mic_config);
     if (ret < 0) {
-        LOG_ERR("Failed to configure PDM DMIC (err %d)", ret);
-        gpio_pin_set(gpio1_dev, MIC_PWR_PIN, 0); // Power down on error
-        return ret;
+        LOG_WRN("Configuring PDM_CHAN_RIGHT failed (%d), trying PDM_CHAN_LEFT...", ret);
+        mic_config.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
+        ret = dmic_configure(pdm_dev, &mic_config);
+        if (ret < 0) {
+            LOG_ERR("Failed to configure PDM DMIC (err %d)", ret);
+            return ret;
+        }
     }
 
     ret = dmic_trigger(pdm_dev, DMIC_TRIGGER_START);
     if (ret < 0) {
         LOG_ERR("Failed to trigger PDM DMIC start (err %d)", ret);
-        gpio_pin_set(gpio1_dev, MIC_PWR_PIN, 0);
         return ret;
     }
 
-    LOG_INF("Microphone recording started");
+    LOG_INF("Microphone PDM recording started successfully");
     return 0;
 }
 
@@ -116,11 +119,6 @@ int mic_drv_stop(void)
         }
     }
 
-    if (gpio1_dev != NULL) {
-        // Power down microphone to save power
-        gpio_pin_set(gpio1_dev, MIC_PWR_PIN, 0);
-    }
-
     LOG_INF("Microphone recording stopped");
     return ret;
 }
@@ -133,17 +131,14 @@ int mic_drv_read(int16_t *buffer, size_t samples)
 
     void *mem_slice;
     size_t size;
-    // Timeout argument is raw integer milliseconds
     int ret = dmic_read(pdm_dev, 0, &mem_slice, &size, 100);
     if (ret < 0) {
-        LOG_ERR("Failed to read from PDM DMIC device (err %d)", ret);
         return ret;
     }
 
     size_t bytes_to_copy = size < (samples * sizeof(int16_t)) ? size : (samples * sizeof(int16_t));
     memcpy(buffer, mem_slice, bytes_to_copy);
 
-    // Free memory slice back to slab
     k_mem_slab_free(&mic_slab, mem_slice);
 
     return 0;

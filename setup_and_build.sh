@@ -89,13 +89,19 @@ echo "Building Ble-mic..."
 "$NRFUTIL_DIR/nrfutil" toolchain-manager launch --ncs-version "$NCS_VERSION" --dir "$INSTALL_DIR" -- \
     west build -b xiao_ble/nrf52840/sense "$PROJECT_DIR/apps/Ble-mic" --pristine
 
+# Compile app_ble_sensor
+echo "Building app_ble_sensor..."
+"$NRFUTIL_DIR/nrfutil" toolchain-manager launch --ncs-version "$NCS_VERSION" --dir "$INSTALL_DIR" -- \
+    west build -b xiao_ble/nrf52840/sense "$PROJECT_DIR/apps/app_ble_sensor" --pristine
+
 echo "========================================================================"
 echo "Setup and compilation completed successfully!"
 echo "Binaries are located at:"
-echo " - Template App: $INSTALL_DIR/$NCS_VERSION/build/app_template/zephyr/zephyr.uf2"
-echo " - BLE Mic App:  $INSTALL_DIR/$NCS_VERSION/build/Ble-mic/zephyr/zephyr.uf2"
+echo " - Template App:   $INSTALL_DIR/$NCS_VERSION/build/app_template/zephyr/zephyr.uf2"
+echo " - BLE Mic App:    $INSTALL_DIR/$NCS_VERSION/build/Ble-mic/zephyr/zephyr.uf2"
+echo " - BLE Sensor App: $INSTALL_DIR/$NCS_VERSION/build/app_ble_sensor/zephyr/zephyr.uf2"
 echo "========================================================================"
-echo "To run the BLE Mic receiver client, activate your python virtual env and run:"
+echo "To run the BLE IMU 3D Visualizer, activate your python virtual env and run:"
 echo "  source $PROJECT_DIR/venv/bin/activate"
-echo "  python $PROJECT_DIR/apps/Ble-mic/ble_mic_receiver.py"
+echo "  python $PROJECT_DIR/Toolbox/IMU3DBox/imu_3d_viewer.py"
 echo "========================================================================"

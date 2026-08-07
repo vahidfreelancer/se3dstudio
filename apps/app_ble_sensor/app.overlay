@@ -1,0 +1,9 @@
+/* Disable UICR gpio-as-nreset */
+&uicr {
+	/delete-property/ gpio-as-nreset;
+};
+
+/* Enable PDM0 Digital Microphone Peripheral */
+&pdm0 {
+	status = "okay";
+};

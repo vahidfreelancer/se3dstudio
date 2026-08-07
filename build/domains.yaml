@@ -1,0 +1,7 @@
+default: app_ble_sensor
+build_dir: D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build
+domains:
+  - name: app_ble_sensor
+    build_dir: D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/app_ble_sensor
+flash_order:
+  - app_ble_sensor

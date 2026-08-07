@@ -1,0 +1,13 @@
+# Target labels
+ app_ble_sensor
+# Source files and their labels
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor-complete.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-build.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-configure.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-download.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-install.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-mkdir.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-patch.rule
+D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-update.rule

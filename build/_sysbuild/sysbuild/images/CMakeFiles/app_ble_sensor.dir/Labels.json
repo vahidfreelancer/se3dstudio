@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/CMakeFiles/app_ble_sensor-complete.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-build.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-configure.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-download.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-install.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-mkdir.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-patch.rule"
+		},
+		{
+			"file" : "D:/Embedded/SeeedStudioXiaonrf52840SensePlus/build/_sysbuild/sysbuild/images/app_ble_sensor-prefix/src/app_ble_sensor-stamp/app_ble_sensor-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"app_ble_sensor"
+		],
+		"name" : "app_ble_sensor"
+	}
+}
