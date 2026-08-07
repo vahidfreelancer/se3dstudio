@@ -1,0 +1,79 @@
+# ==============================================================================
+# Git Ignore Configuration - Seeed Studio XIAO nRF52840 Sense Platform
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. AI Temporary Workspace, Thinking & Test Files
+# ------------------------------------------------------------------------------
+temp_ai/
+GEMINI.md
+.agents/
+.gemini/
+.claude/
+.copilot/
+*.scratch
+
+# ------------------------------------------------------------------------------
+# 2. Build Artifacts & Zephyr / Nordic Compiler Outputs
+# ------------------------------------------------------------------------------
+build/
+build_*/
+_sysbuild/
+.west/
+zephyr/
+modules/
+nrfxlib/
+
+# Compiled Binary & Object Extensions
+*.hex
+*.elf
+*.uf2
+*.bin
+*.stat
+*.map
+*.o
+*.obj
+*.a
+*.d
+
+# ------------------------------------------------------------------------------
+# 3. Python Virtual Environments & Bytecode Caches
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+
+# ------------------------------------------------------------------------------
+# 4. Sensitive Files, Credentials & Environment Configurations
+# ------------------------------------------------------------------------------
+.env
+.env.*
+*.env
+credentials.json
+secrets.json
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+id_rsa
+id_rsa.pub
+*.log
+
+# ------------------------------------------------------------------------------
+# 5. IDE & OS System Files
+# ------------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
